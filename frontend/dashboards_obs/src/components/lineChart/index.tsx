@@ -11,7 +11,7 @@ import {
 // 1. Definimos o formato do dado que vem do seu backend
 interface EvolucaoData {
   ano: string | number;
-  quantidade: number; // Mude "quantidade" para o nome exato da propriedade que seu backend retorna para o eixo Y
+  quantidade: number; 
 }
 
 // 2. Definimos que o componente espera receber uma propriedade chamada "dados" 

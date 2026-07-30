@@ -4892,6 +4892,7 @@ INSERT INTO tb_acampamnetos_turisticos_2026_t1 (id_segmento, atividade_turistica
 (1, 'Acampamento Turístico', '95802336000184', 'Camping Lagoamar', 'Operação', 'Matriz', 'Sociedade Empresária Limitada', 'EMPRESA DE PEQUENO PORTE', 'Garopaba', 'SC', 'Garopaba', '1992-12-16', '(48)3254-3187', 'faleconosco@lagoamar.com.br', 'www.lagoamar.com.br', '95802336000184', '2027-03-14 15:57:43', 'Espaço para montagem de barracas|Estacionamento para veículos destinados ao alojamento', '55000', '2000', NULL),
 (1, 'Acampamento Turístico', '97296164000140', 'PARQUE ECOLOGICO TOSI MATTI', 'Operação', 'Matriz', 'Sociedade Empresária Limitada', 'MICROEMPRESA', 'PEDRA FURADA LOTE BORGO FORTE Antônio Prado', 'RS', 'Antônio Prado', '1994-07-08', '(54)9622-1670', 'ESCRITORIOPASA@NOL.COM.BR', NULL, '97296164000140', '2027-12-12 15:56:30', 'Espaço para montagem de barracas|Estacionamento para veículos destinados ao alojamento', '100', '200', NULL);
 
+
 CREATE TABLE tb_acampamentos_consolidado (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ano INT NOT NULL,
@@ -4910,3 +4911,10 @@ CREATE TABLE tb_acampamentos_consolidado (
     INDEX idx_municipio (municipio),
     INDEX idx_ano_uf (ano, uf)
 );
+
+
+SELECT municipio, ano, COUNT(id) AS total
+FROM tb_acampamentos_consolidado
+WHERE municipio = 'Itu'
+GROUP BY municipio, ano
+ORDER BY ano ASC;

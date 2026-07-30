@@ -38,6 +38,23 @@ class AcampamentoConsolidadoRepositoryImp {
     });
   }
 
+async acumuladoAnualMunicipio(municipio = string) {
+  const where = {};
+  if (municipio) where.municipio = municipio;
+
+  return TbAcampamentosConsolidado.findAll({ 
+    attributes: [
+      'municipio', 
+      'ano', 
+      [fn('COUNT', col('id')), 'total']
+    ],
+    where,
+    group: ['municipio', 'ano'],
+    order: [['ano', 'ASC']], 
+    raw: true,
+  });
+}
+
   async compararAnos(anos) {
     return TbAcampamentosConsolidado.findAll({
       attributes: ['ano', [fn('COUNT', col('id')), 'total']],

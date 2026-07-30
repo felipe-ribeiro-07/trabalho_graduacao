@@ -10,7 +10,8 @@ const { RankingPorUFUseCase } = require('../../../../../application/use-cases/Ac
 const { RankingPorMunicipioUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/RankingPorMunicipioUseCase');
 const { CompararAnosUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/ComparaPorAnoUseCase');
 const { UltimosCincoAnosUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/CompararAnosPorUFUseCase');
-const {EvolucaoAnualPorUfUseCase} = require('../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase')
+const { EvolucaoAnualPorUfUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase');
+const { AcumuladoMuncipalUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/AcumuladoMunicipalUSeCase');
 const { DashboardController } = require('../controllers/AcampamentosTuristicosController'); // esse é o .ts que corrigimos agora
 
 const repositoryConsolidado = new AcampamentoConsolidadoRepositoryImp();
@@ -20,7 +21,8 @@ const dashboardController = new DashboardController({
   rankingMunicipio: new RankingPorMunicipioUseCase(repositoryConsolidado),
   compararAnos: new CompararAnosUseCase(repositoryConsolidado),
   ultimosCincoAnos: new UltimosCincoAnosUseCase(repositoryConsolidado),
-  evolucaoAnualPorUf: new EvolucaoAnualPorUfUseCase(repositoryConsolidado)
+  evolucaoAnualPorUf: new EvolucaoAnualPorUfUseCase(repositoryConsolidado),
+  acumuladoMuncipal: new AcumuladoMuncipalUseCase(repositoryConsolidado),
 });
 
 router.get('/evolucao-anual', (req, res) => dashboardController.handleEvolucaoAnual(req, res));
@@ -29,6 +31,6 @@ router.get('/ranking-municipio', (req, res) => dashboardController.handleRanking
 router.get('/comparar-anos', (req, res) => dashboardController.handleCompararAnos(req, res));
 router.get('/ultimos-cinco-anos', (req, res) => dashboardController.handleUltimosCincoAnos(req, res));
 router.get('/evolucao-anual-uf', (req, res) => dashboardController.handleEvolucaoAnualPorUf(req, res));
-
+router.get('/acumulado-anual-municipio', (req, res) => dashboardController.handleAcumuladoMuncipal(req, res));
 
 module.exports = router;

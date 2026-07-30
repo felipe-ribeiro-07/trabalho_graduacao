@@ -5,7 +5,8 @@ import { RankingPorUFUseCase } from '../../../../../application/use-cases/Acampa
 import { RankingPorMunicipioUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/RankingPorMunicipioUseCase';
 import { CompararAnosUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/ComparaPorAnoUseCase';
 import { UltimosCincoAnosUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/CompararAnosPorUFUseCase';
-import {EvolucaoAnualPorUfUseCase} from '../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase'
+import { EvolucaoAnualPorUfUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase';
+import { AcumuladoMuncipalUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/AcumuladoMunicipalUSeCase';
 
 interface DashboardControllerDeps {
   evolucaoAnual: EvolucaoAnualUseCase;
@@ -14,6 +15,7 @@ interface DashboardControllerDeps {
   compararAnos: CompararAnosUseCase;
   ultimosCincoAnos: UltimosCincoAnosUseCase;
   evolucaoAnualPorUf: EvolucaoAnualPorUfUseCase;
+  acumuladoMuncipal: AcumuladoMuncipalUseCase;
 }
 
 export class DashboardController {
@@ -23,7 +25,7 @@ export class DashboardController {
   private compararAnos: CompararAnosUseCase;
   private ultimosCincoAnos: UltimosCincoAnosUseCase;
   private evolucaoAnualPorUf: EvolucaoAnualPorUfUseCase;
-
+  private acumuladoMuncipal: AcumuladoMuncipalUseCase;
 
   constructor(deps: DashboardControllerDeps) {
     this.evolucaoAnual = deps.evolucaoAnual;
@@ -32,6 +34,7 @@ export class DashboardController {
     this.compararAnos = deps.compararAnos;
     this.ultimosCincoAnos = deps.ultimosCincoAnos;
     this.evolucaoAnualPorUf = deps.evolucaoAnualPorUf;
+    this.acumuladoMuncipal = deps.acumuladoMuncipal;
   }
 
   async handleEvolucaoAnual(req: Request, res: Response): Promise<Response> {
@@ -128,6 +131,19 @@ export class DashboardController {
       return res.json(resultado);
     } catch (error) {
       console.error('Erro em handleEvolucaoAnualPorUf:', error);
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      return res.status(500).json({ error: message });
+    }
+  }
+
+  async handleAcumuladoMuncipal(req: Request, res: Response): Promise<Response> {
+    try {
+      const muncipioParam = String(req.query.municipio ?? '');
+      const municipio = muncipioParam.trim();
+      const resultado = await this.acumuladoMuncipal.execute(municipio);
+      return res.json(resultado);
+    } catch (error) {
+      console.error('Erro em handleAcumuladoMuncipal:', error);
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       return res.status(500).json({ error: message });
     }

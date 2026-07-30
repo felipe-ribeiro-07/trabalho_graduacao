@@ -59,11 +59,20 @@ class AcampamentosTuristicosServices {
     return response.data;
   }
 
-  static async TodosAnosUF({uf} : {uf: string}): Promise<any> {
-    const response = await api.get(`/acampamento-turistico/evolucao-anual-uf?uf=${uf}`)
+  static async TodosAnosUF({ uf }: { uf: string }): Promise<any> {
+    const response = await api.get(`/acampamento-turistico/evolucao-anual-uf?uf=${uf}`);
     return response.data;
   }
-  
+
+  static async AcumuladoAnualMunicipio(municipio: string): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('municipio', municipio);
+
+    const response = await api.get(
+      `/acampamento-turistico/acumulado-anual-municipio?${params.toString()}`
+    );
+    return response.data;
+  }
 }
 
 export default AcampamentosTuristicosServices;
