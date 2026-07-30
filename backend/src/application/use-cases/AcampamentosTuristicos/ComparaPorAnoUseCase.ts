@@ -1,4 +1,3 @@
-// src/application/use-cases/AcampamentosTuristicos/CompararAnosUseCase.ts
 import { IAcampamentosTuristicosRepository, TotalPorAno } from '../../ports/IAcampamentosTuristicosRepository';
 
 export class CompararAnosUseCase {

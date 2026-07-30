@@ -56,6 +56,38 @@ class AcampamentoConsolidadoRepositoryImp {
 
     return TbAcampamentosConsolidado.count({ where });
   }
+
+  async ultimosCincoAnos(filtros = {}) {
+    const where = {};
+    if (filtros.uf) where.uf = filtros.uf;
+
+    if (filtros.ano) {
+      where.ano = Array.isArray(filtros.ano) ? { [Op.in]: filtros.ano } : filtros.ano;
+    }
+
+    return TbAcampamentosConsolidado.findAll({
+      attributes: ['ano', [fn('COUNT', col('id')), 'total']],
+      where,
+      group: ['ano'],
+      order: [['ano', 'DESC']],
+      limit: 5,
+      raw: true,
+    });
+  }
+
+
+  async evolucaoAnualUF(filtros = {}) {
+    const where = {};
+    if (filtros.uf) where.uf = filtros.uf;
+
+    return TbAcampamentosConsolidado.findAll({
+      attributes: ['ano', [fn('COUNT', col('id')), 'total']],
+      where,
+      group: ['ano'],
+      order: [['ano', 'DESC']],
+      raw: true,
+    });
+  }
 }
 
 module.exports = AcampamentoConsolidadoRepositoryImp;
