@@ -1,4 +1,4 @@
-import { IAcampamentosTuristicosRepository, TotalPorAno } from '../../ports/IAcampamentosTuristicosRepository';
+import { IAcampamentosTuristicosRepository, TotalPorAno } from '../ports/IAcampamentosTuristicosRepository';
 
 export class CompararAnosUseCase {
   constructor(private repository: IAcampamentosTuristicosRepository) {}

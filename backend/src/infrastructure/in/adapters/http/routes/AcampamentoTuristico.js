@@ -5,14 +5,14 @@ const router = require('express').Router();
 // Rotas novas: dashboard (métricas consolidadas)
 // ==========================================
 const AcampamentoConsolidadoRepositoryImp = require('../../../../out/database/sequelize/repositories/AcampamentoTuristicosRepositoryImpl');
-const { EvolucaoAnualUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUseCase');
-const { RankingPorUFUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/RankingPorUFUseCase');
-const { RankingPorMunicipioUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/RankingPorMunicipioUseCase');
-const { CompararAnosUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/ComparaPorAnoUseCase');
-const { UltimosCincoAnosUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/CompararAnosPorUFUseCase');
-const { EvolucaoAnualPorUfUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase');
-const { AcumuladoMuncipalUseCase } = require('../../../../../application/use-cases/AcampamentosTuristicos/AcumuladoMunicipalUSeCase');
-const { DashboardController } = require('../controllers/AcampamentosTuristicosController'); // esse é o .ts que corrigimos agora
+const { EvolucaoAnualUseCase } = require('../../../../../application/use-cases/EvolucaoAnualUseCase');
+const { RankingPorUFUseCase } = require('../../../../../application/use-cases/RankingPorUFUseCase');
+const { RankingPorMunicipioUseCase } = require('../../../../../application/use-cases/RankingPorMunicipioUseCase');
+const { CompararAnosUseCase } = require('../../../../../application/use-cases/ComparaPorAnoUseCase');
+const { UltimosCincoAnosUseCase } = require('../../../../../application/use-cases/CompararAnosPorUFUseCase');
+const { EvolucaoAnualPorUfUseCase } = require('../../../../../application/use-cases/EvolucaoAnualUFUseCase');
+const { AcumuladoMuncipalUseCase } = require('../../../../../application/use-cases/AcumuladoMunicipalUSeCase');
+const { DashboardController } = require('../controllers/DashboardController');
 
 const repositoryConsolidado = new AcampamentoConsolidadoRepositoryImp();
 const dashboardController = new DashboardController({

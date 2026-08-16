@@ -18,6 +18,22 @@ REGRAS:
 9. O MySQL é reconectado automaticamente quando a conexão cai.
 10. Arquivos com erro não interrompem os demais.
 11. Ao final são mostrados todos os arquivos que deram erro.
+
+CORREÇÃO DE ENCODING:
+A detecção de encoding do CSV agora usa decodificação ESTRITA
+("errors=strict") ao testar cada candidato em ENCODINGS_CSV. Antes,
+a leitura usava "errors=replace", que nunca lança erro de decodificação
+mesmo com o encoding errado — ele silenciosamente troca cada byte
+inválido por "�" e o script aceita a primeira tentativa (geralmente
+utf-8) como se tivesse funcionado, mesmo quando o arquivo real é
+cp1252/latin1. Isso fazia acentos virarem caracteres incógnitos sem
+nenhum aviso.
+
+Com decodificação estrita, um encoding errado agora FALHA de verdade,
+e o script segue para o próximo candidato da lista até achar um que
+decodifique o arquivo inteiro sem erros. Só se nenhum encoding bater
+100% é que um modo tolerante (com substituição de caracteres) é usado
+como último recurso — e isso fica bem registrado no log.
 """
 
 import os
@@ -62,6 +78,13 @@ DB_CONFIG = {
 
     # Aumenta tolerância para arquivos grandes
     "autocommit": False,
+
+    # IMPORTANTE: força a conexão a usar utf8mb4. Sem isso, mesmo com
+    # o texto corretamente decodificado em Python, a conexão pode
+    # negociar um charset diferente do banco (ex: latin1) e embaralhar
+    # acentos na hora de gravar/ler.
+    "charset": "utf8mb4",
+    "use_unicode": True,
 }
 
 
@@ -92,12 +115,21 @@ EXTENSOES_EXCEL = (
 
 GRAVAR_METADADOS_ORIGEM = True
 
+# Ordem de tentativa de encoding. utf-8/utf-8-sig primeiro (mais
+# comuns em exports recentes), depois cp1252/latin1 (comuns em
+# exports mais antigos de sistemas Windows brasileiros).
 ENCODINGS_CSV = (
     "utf-8",
     "utf-8-sig",
     "cp1252",
     "latin1",
 )
+
+# Usado apenas se NENHUM dos encodings acima decodificar o arquivo
+# inteiro sem erros. Nesse caso, o arquivo é lido em modo tolerante
+# (bytes inválidos viram "?"/"�"), e um aviso claro é registrado no
+# log para que o arquivo possa ser conferido manualmente depois.
+ENCODING_FALLBACK_TOLERANTE = "cp1252"
 
 SEPARADORES_CSV = (
     ";",
@@ -797,7 +829,25 @@ def inserir_dataframe(
 # CSV - DETECÇÃO DO SEPARADOR
 # ============================================================================
 
-def detectar_separador(caminho, encoding):
+def detectar_separador(
+    caminho,
+    encoding,
+    modo_estrito=True
+):
+    """
+    Lê uma amostra do arquivo para detectar o separador (";", ","
+    ou tab).
+
+    modo_estrito=True (padrão): usa errors="strict", ou seja, se o
+    encoding informado estiver errado para este arquivo, uma
+    UnicodeDecodeError é lançada aqui mesmo — o que é o comportamento
+    desejado, pois permite ao chamador (ler_csv_com_fallback) tentar
+    o próximo encoding da lista.
+
+    modo_estrito=False: usa errors="replace" (modo tolerante), usado
+    apenas como último recurso quando nenhum encoding decodifica o
+    arquivo inteiro sem erros.
+    """
 
     amostra = ""
 
@@ -805,7 +855,7 @@ def detectar_separador(caminho, encoding):
         caminho,
         "r",
         encoding=encoding,
-        errors="replace",
+        errors="strict" if modo_estrito else "replace",
         newline=""
     ) as arquivo:
 
@@ -842,8 +892,22 @@ def detectar_separador(caminho, encoding):
 def ler_csv_bruto(
     caminho,
     encoding,
-    separador
+    separador,
+    modo_estrito=True
 ):
+    """
+    Lê o arquivo inteiro e devolve a lista de linhas já divididas em
+    campos.
+
+    modo_estrito=True (padrão): errors="strict". Se houver qualquer
+    byte que não decodifique corretamente no encoding informado, uma
+    UnicodeDecodeError é lançada — sinalizando ao chamador que este
+    NÃO é o encoding correto do arquivo, para que o próximo candidato
+    da lista seja tentado.
+
+    modo_estrito=False: errors="replace" (modo tolerante), usado
+    apenas no último recurso.
+    """
 
     linhas = []
 
@@ -851,7 +915,7 @@ def ler_csv_bruto(
         caminho,
         "r",
         encoding=encoding,
-        errors="replace",
+        errors="strict" if modo_estrito else "replace",
         newline=""
     ) as arquivo:
 
@@ -980,9 +1044,90 @@ def normalizar_linhas_csv(
     )
 
 
+def _processar_linhas_csv(linhas, caminho):
+    """
+    Recebe a lista bruta de linhas (já decodificadas corretamente)
+    e devolve o DataFrame final, aplicando normalização de colunas
+    e logando eventuais inconsistências de quantidade de campos.
+    """
+
+    cabecalho = linhas[0][1]
+
+    if not cabecalho:
+
+        raise ValueError(
+            "Cabeçalho do CSV vazio."
+        )
+
+    numero_colunas = len(
+        cabecalho
+    )
+
+    dados = linhas[1:]
+
+    dados_normalizados, problemas = (
+        normalizar_linhas_csv(
+            dados,
+            numero_colunas
+        )
+    )
+
+    if problemas:
+
+        quantidade_mostrar = 20
+
+        problemas_exibidos = (
+            problemas[
+                :quantidade_mostrar
+            ]
+        )
+
+        texto_problemas = (
+            ", ".join(
+                problemas_exibidos
+            )
+        )
+
+        if len(problemas) > quantidade_mostrar:
+
+            texto_problemas += (
+                f" ... e mais "
+                f"{len(problemas) - quantidade_mostrar}"
+                f" problema(s)"
+            )
+
+        log(
+            f'CSV "{os.path.basename(caminho)}": '
+            f'{len(problemas)} linha(s) '
+            f'com quantidade diferente '
+            f'do cabeçalho. '
+            f'Corrigidas automaticamente. '
+            f'Detalhes: {texto_problemas}',
+            "AVISO"
+        )
+
+    df = pd.DataFrame(
+        dados_normalizados,
+        columns=cabecalho
+    )
+
+    return df
+
+
 def ler_csv_com_fallback(
     caminho
 ):
+    """
+    Tenta decodificar o CSV com cada encoding de ENCODINGS_CSV, em
+    modo ESTRITO (sem tolerar nenhum byte inválido). O primeiro
+    encoding que decodifica o arquivo inteiro sem erros é o
+    escolhido — isso é o que garante que acentos e caracteres
+    especiais venham corretos, em vez de virarem "�" silenciosamente.
+
+    Se nenhum encoding da lista decodificar sem erros (arquivo com
+    encoding realmente misto/corrompido), cai em um modo tolerante
+    como último recurso, deixando um AVISO bem visível no log.
+    """
 
     ultimo_erro = None
 
@@ -992,79 +1137,20 @@ def ler_csv_com_fallback(
 
             separador = detectar_separador(
                 caminho,
-                encoding
+                encoding,
+                modo_estrito=True
             )
 
             linhas = ler_csv_bruto(
                 caminho,
                 encoding,
-                separador
+                separador,
+                modo_estrito=True
             )
 
-            if len(linhas) < 1:
-
-                raise ValueError(
-                    "CSV não possui cabeçalho."
-                )
-
-            cabecalho = linhas[0][1]
-
-            if not cabecalho:
-
-                raise ValueError(
-                    "Cabeçalho do CSV vazio."
-                )
-
-            numero_colunas = len(
-                cabecalho
-            )
-
-            dados = linhas[1:]
-
-            dados_normalizados, problemas = (
-                normalizar_linhas_csv(
-                    dados,
-                    numero_colunas
-                )
-            )
-
-            if problemas:
-
-                quantidade_mostrar = 20
-
-                problemas_exibidos = (
-                    problemas[
-                        :quantidade_mostrar
-                    ]
-                )
-
-                texto_problemas = (
-                    ", ".join(
-                        problemas_exibidos
-                    )
-                )
-
-                if len(problemas) > quantidade_mostrar:
-
-                    texto_problemas += (
-                        f" ... e mais "
-                        f"{len(problemas) - quantidade_mostrar}"
-                        f" problema(s)"
-                    )
-
-                log(
-                    f'CSV "{os.path.basename(caminho)}": '
-                    f'{len(problemas)} linha(s) '
-                    f'com quantidade diferente '
-                    f'do cabeçalho. '
-                    f'Corrigidas automaticamente. '
-                    f'Detalhes: {texto_problemas}',
-                    "AVISO"
-                )
-
-            df = pd.DataFrame(
-                dados_normalizados,
-                columns=cabecalho
+            df = _processar_linhas_csv(
+                linhas,
+                caminho
             )
 
             return (
@@ -1079,12 +1165,56 @@ def ler_csv_com_fallback(
 
             continue
 
-    if ultimo_erro is not None:
-        raise ultimo_erro
+    # ------------------------------------------------------------
+    # NENHUM ENCODING DA LISTA DECODIFICOU O ARQUIVO SEM ERROS.
+    # Último recurso: modo tolerante, registrando aviso explícito.
+    # ------------------------------------------------------------
 
-    raise ValueError(
-        "Não foi possível ler o CSV."
+    log(
+        f'Nenhum dos encodings '
+        f'({", ".join(ENCODINGS_CSV)}) '
+        f'decodificou "{os.path.basename(caminho)}" '
+        f'sem erros. Último erro: {ultimo_erro}. '
+        f'Tentando modo TOLERANTE com '
+        f'"{ENCODING_FALLBACK_TOLERANTE}" — '
+        f'bytes inválidos serão substituídos por "�" '
+        f'no texto. Revise este arquivo manualmente '
+        f'se possível.',
+        "AVISO"
     )
+
+    try:
+
+        separador = detectar_separador(
+            caminho,
+            ENCODING_FALLBACK_TOLERANTE,
+            modo_estrito=False
+        )
+
+        linhas = ler_csv_bruto(
+            caminho,
+            ENCODING_FALLBACK_TOLERANTE,
+            separador,
+            modo_estrito=False
+        )
+
+        df = _processar_linhas_csv(
+            linhas,
+            caminho
+        )
+
+        return (
+            df,
+            f"{ENCODING_FALLBACK_TOLERANTE} (tolerante)",
+            separador
+        )
+
+    except Exception as erro_final:
+
+        if ultimo_erro is not None:
+            raise ultimo_erro
+
+        raise erro_final
 
 
 # ============================================================================
@@ -1468,6 +1598,8 @@ def main():
     total_erro = 0
 
     arquivos_com_erro = []
+
+    arquivos_com_encoding_tolerante = []
 
     grupos_logados = set()
 

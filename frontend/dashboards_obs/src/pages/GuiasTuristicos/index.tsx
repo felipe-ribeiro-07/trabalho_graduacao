@@ -1,14 +1,21 @@
 import { useMemo, useState, useEffect } from 'react';
-import AcampamentosTuristicosServices from '../../services/acampamentos_turisticos.tsx';
+import GuiasTuristicosService from '../../services/guias_turisticos.tsx';
 import { GraficoBarrasEvolucao } from '../../components/barChart/index.tsx';
-import { GraficoRegioesEstados } from '../../components/pieChartEstadoRegiao';
+import { GraficoRegioesEstados } from '../../components/pieChartEstadoRegiao/index.tsx';
 import { GraficoEvolucaoAnual } from '../../components/lineChart/index.tsx';
-import { Pill } from '../../components/pills';
+import { Pill } from '../../components/pills/index.tsx';
 import { TableMunicipiosRanking } from '../../components/tableRankingMunicipal/index.tsx';
 import { StateSelect } from '../../components/select/index.tsx';
 import { GraficoComparativoEstados } from '../../components/lineChartComparacaoEstados/index.tsx';
 import { TextInput } from '../../components/TextInput/index.tsx';
 import { ListaCategorias } from '../../components/listRodaPe/index.tsx';
+import GrowthCard from '../../components/growthCard/index.tsx';
+import {
+  evolucaoUltimoAno,
+  calcularDiferencaMaiorMenor,
+  calcularDiferencaPrimeiroSegundo,
+} from '../../utils/evolucao.ts';
+import GraficoRegioesRanking from '../../components/pieChartRegioes/index.tsx';
 
 const MAPA_REGIOES: Record<string, string> = {
   AC: 'Norte',
@@ -42,12 +49,13 @@ const MAPA_REGIOES: Record<string, string> = {
 
 const pillsEstados = Object.keys(MAPA_REGIOES);
 
-export function EvolucaoAnualAcampamentos() {
-  const [dadosEvolucao, setDadosEvolucao] = useState([]);
+export function GuiasTuristicos() {
+  const [dadosEvolucao, setDadosEvolucao] = useState<any[]>([]);
   const [dadosRanking, setDadosRanking] = useState([]);
   const [dadosRegioes, setDadosRegioes] = useState<any[]>([]);
   const [dadosCidades, setDadosCidades] = useState<any[]>([]);
   const [dadosEstados, setDadosEstados] = useState<any[]>([]);
+  const [dadosPieChart, setDadosPieChart] = useState<any[]>([]);
   const [dadosUltimosCincoAnos, setDadosUltimosCincoAnos] = useState<any[]>([]);
 
   const [carregando, setCarregando] = useState(true);
@@ -73,7 +81,7 @@ export function EvolucaoAnualAcampamentos() {
       setCarregandoMunicipio(true);
       setErroMunicipio(null);
       try {
-        const resultado = await AcampamentosTuristicosServices.AcumuladoAnualMunicipio(municipio);
+        const resultado = await GuiasTuristicosService.AcumuladoAnualMunicipio(municipio);
         setDadosMunicipio(resultado);
       } catch (erro) {
         console.error('Erro ao buscar dados do município:', erro);
@@ -93,29 +101,34 @@ export function EvolucaoAnualAcampamentos() {
       try {
         setCarregando(true);
 
-        const evolucaoCache = localStorage.getItem('resultadoEvolucao');
-        const rankingCache = localStorage.getItem('resultadoRanking');
+        const evolucaoCache = localStorage.getItem('resultadoEvolucaoGuias');
+        const rankingCache = localStorage.getItem('resultadoRankingGuias');
+        const pieChartCache = localStorage.getItem('resultadoPieChart');
 
-        if (evolucaoCache && rankingCache) {
+        if (evolucaoCache && rankingCache && pieChartCache) {
           setDadosEvolucao(JSON.parse(evolucaoCache));
           setDadosRanking(JSON.parse(rankingCache).slice(0, 14));
+          setDadosPieChart(JSON.parse(pieChartCache));
         }
 
-        const [resultadoEvolucao, resultadoRanking] = await Promise.all([
-          AcampamentosTuristicosServices.EvolucaoAnualAcampamentos(),
-          AcampamentosTuristicosServices.RankingAcampamentos('2026'),
+        const [resultadoEvolucaoGuias, resultadoRankingGuias, resultadoPieChart] = await Promise.all([
+          GuiasTuristicosService.EvolucaoAnualAcampamentos(),
+          GuiasTuristicosService.RankingAcampamentos('2026'),
+          GuiasTuristicosService.RankingAcampamentos('2026')
         ]);
 
-        localStorage.setItem('resultadoEvolucao', JSON.stringify(resultadoEvolucao));
-        localStorage.setItem('resultadoRanking', JSON.stringify(resultadoRanking));
+        localStorage.setItem('resultadoEvolucaoGuias', JSON.stringify(resultadoEvolucaoGuias));
+        localStorage.setItem('resultadoRankingGuias', JSON.stringify(resultadoRankingGuias));
+        localStorage.setItem('resultadoPieChart', JSON.stringify(resultadoPieChart));
 
-        setDadosEvolucao(resultadoEvolucao);
-        setDadosRanking(resultadoRanking.slice(0, 14));
+        setDadosPieChart(resultadoPieChart);
+        setDadosEvolucao(resultadoEvolucaoGuias);
+        setDadosRanking(resultadoRankingGuias.slice(0, 14));
 
         const [resultadoUF, resultadoCidade, resultadoUltimosCincoAnos] = await Promise.all([
-          AcampamentosTuristicosServices.RankingEstados(),
-          AcampamentosTuristicosServices.RankingMunicipal({ uf: ufAtiva }),
-          AcampamentosTuristicosServices.UltimosCincoAnos({ uf: ufAtiva }),
+          GuiasTuristicosService.RankingEstados(),
+          GuiasTuristicosService.RankingMunicipal({ uf: ufAtiva }),
+          GuiasTuristicosService.UltimosCincoAnos({ uf: ufAtiva }),
         ]);
 
         const dadosComRegiao = resultadoUF.map((item: any) => ({
@@ -146,7 +159,7 @@ export function EvolucaoAnualAcampamentos() {
     async function carregarCidades() {
       setCarregandoRegiao(true);
       try {
-        const resultado = await AcampamentosTuristicosServices.RankingMunicipal({ uf: ufAtiva });
+        const resultado = await GuiasTuristicosService.RankingMunicipal({ uf: ufAtiva });
         if (ativo) setDadosCidades(resultado);
       } catch (erro) {
         console.error('Erro ao carregar cidades do estado:', erro);
@@ -176,11 +189,11 @@ export function EvolucaoAnualAcampamentos() {
           return;
         }
 
-        const resE1 = await AcampamentosTuristicosServices.TodosAnosUF({ uf: estado1 });
+        const resE1 = await GuiasTuristicosService.TodosAnosUF({ uf: estado1 });
         if (ativo) setDadosE1(resE1);
 
         if (estado2) {
-          const resE2 = await AcampamentosTuristicosServices.TodosAnosUF({ uf: estado2 });
+          const resE2 = await GuiasTuristicosService.TodosAnosUF({ uf: estado2 });
           if (ativo) setDadosE2(resE2);
         } else {
           if (ativo) setDadosE2([]);
@@ -210,13 +223,28 @@ export function EvolucaoAnualAcampamentos() {
       .sort((a: any, b: any) => b.total - a.total);
   }, [ufAtiva, dadosEstados]);
 
+  // Comparativo entre o ano atual e o anterior (ex: 2026 x 2025)
+  const comparativoUltimoAno = useMemo(() => evolucaoUltimoAno(dadosEvolucao), [dadosEvolucao]);
+
+  // Comparativo entre a UF com maior e menor total no ranking
+  const diferencaMaiorMenor = useMemo(
+    () => calcularDiferencaMaiorMenor(dadosRanking, 'uf'),
+    [dadosRanking]
+  );
+
+  // Comparativo entre a 1ª e a 2ª colocada no ranking
+  const diferencaPrimeiroSegundo = useMemo(
+    () => calcularDiferencaPrimeiroSegundo(dadosRanking, 'uf'),
+    [dadosRanking]
+  );
+
   if (carregando) {
     return <div className="p-6">Carregando painel de análise...</div>;
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Panorama de Acampamentos Turísticos</h1>
+      <h1 className="text-2xl font-bold mb-4">Panorama de Guias de Turísmo</h1>
       <div className="border w-95% border-green-950"></div>
 
       {/* Grid Superior: Gráfico de Linha e Gráfico de Barras */}
@@ -228,6 +256,47 @@ export function EvolucaoAnualAcampamentos() {
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-center font-medium mb-4 text-gray-700">Ranking por UF (2026)</h3>
           <GraficoBarrasEvolucao dados={dadosRanking} />
+        </div>
+      </div>
+
+      {/* Área de Cards e Gráfico (50% / 50%) */}
+      <div className="mt-8 flex flex-col lg:flex-row gap-6">
+        {/* Esquerda: 3 cards lado a lado ocupando metade da tela no Desktop */}
+        <div className="grid grid-cols-3 gap-2 md:gap-4 w-full lg:w-1/2">
+          {/* Card 1 — Crescimento anual (ano atual x anterior) */}
+          {comparativoUltimoAno && (
+            <GrowthCard
+              title="Crescimento Anual"
+              subtitle={`(${comparativoUltimoAno.anoAtual} x ${comparativoUltimoAno.anoAnterior})`}
+              percentage={`${comparativoUltimoAno.evolucao > 0 ? '+' : ''}${comparativoUltimoAno.evolucao.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+              description={`De ${comparativoUltimoAno.totalAnterior.toLocaleString('pt-BR')} para ${comparativoUltimoAno.totalAtual.toLocaleString('pt-BR')} em ${comparativoUltimoAno.anoAtual}.`}
+            />
+          )}
+
+          {/* Card 2 — Maior x Menor do ranking */}
+          {diferencaMaiorMenor && (
+            <GrowthCard
+              title="Maior x Menor"
+              subtitle={`(${diferencaMaiorMenor.labelPrimeiro} x ${diferencaMaiorMenor.labelSegundo})`}
+              percentage={`+${diferencaMaiorMenor.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+              description={`${diferencaMaiorMenor.labelPrimeiro} tem ${diferencaMaiorMenor.diferenca.toLocaleString('pt-BR')} guias a mais que ${diferencaMaiorMenor.labelSegundo}.`}
+            />
+          )}
+
+          {/* Card 3 — 1º x 2º colocado do ranking */}
+          {diferencaPrimeiroSegundo && (
+            <GrowthCard
+              title="1º x 2º Colocado"
+              subtitle={`(${diferencaPrimeiroSegundo.labelPrimeiro} x ${diferencaPrimeiroSegundo.labelSegundo})`}
+              percentage={`+${diferencaPrimeiroSegundo.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+              description={`${diferencaPrimeiroSegundo.labelPrimeiro} lidera com ${diferencaPrimeiroSegundo.diferenca.toLocaleString('pt-BR')} guias a mais que ${diferencaPrimeiroSegundo.labelSegundo}.`}
+            />
+          )}
+        </div>
+
+        {/* Direita: Gráfico ocupando a outra metade da tela */}
+        <div className="w-full lg:w-1/2 bg-white border border-gray-100 rounded-2xl flex items-center justify-center p-4 min-h-[120px] shadow-sm">
+          <GraficoRegioesRanking dadosRanking={dadosPieChart} />
         </div>
       </div>
 
@@ -306,70 +375,69 @@ export function EvolucaoAnualAcampamentos() {
           </div>
         </div>
 
-        {estado1 ?
+        {estado1 ? (
           <GraficoComparativoEstados
             dadosEstado1={dadosE1}
             dadosEstado2={dadosE2}
             nomeEstado1={estado1}
             nomeEstado2={estado2}
           />
-        : <div className="flex items-center justify-center h-48 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 text-gray-400">
+        ) : (
+          <div className="flex items-center justify-center h-48 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 text-gray-400">
             Selecione uma localidade principal para iniciar a comparação.
           </div>
-        }
+        )}
       </div>
 
       {/* Busca por Município */}
- <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-    
-    {/* 2. O gráfico ocupa 2/3 do espaço (col-span-2) */}
-    <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[450px] relative">
-      <h3 className="font-medium text-gray-700 pb-4 text-center">
-        Evolução Histórica por Município
-      </h3>
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-        <div className="flex-1 w-full">
-          <TextInput
-            label="Buscar Município"
-            placeholder="Ex: Ibiúna"
-            value={municipio}
-            onChange={(e) => setMunicipio(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === 'Enter') lidarComBusca();
-            }}
-          />
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {/* 2. O gráfico ocupa 2/3 do espaço (col-span-2) */}
+          <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[450px] relative">
+            <h3 className="font-medium text-gray-700 pb-4 text-center">
+              Evolução Histórica por Município
+            </h3>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="flex-1 w-full">
+                <TextInput
+                  label="Buscar Município"
+                  placeholder="Ex: Ibiúna"
+                  value={municipio}
+                  onChange={(e) => setMunicipio(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') lidarComBusca();
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={lidarComBusca}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Buscar
+              </button>
+            </div>
+
+            {carregandoMunicipio && <p className="text-sm text-gray-500 mt-3">Buscando...</p>}
+
+            {erroMunicipio && <p className="text-sm text-red-600 mt-3">{erroMunicipio}</p>}
+
+            {!carregandoMunicipio && !erroMunicipio && dadosMunicipio.length === 0 && municipio && (
+              <p className="text-sm text-gray-400 mt-3">
+                Nenhum dado encontrado para "{municipio}".
+              </p>
+            )}
+
+            <div className="mt-4 flex-1">
+              <GraficoEvolucaoAnual dados={dadosMunicipio} />
+            </div>
+          </div>
+
+          {/* 3. A lista ocupa 1/3 do espaço restante e estica na altura (h-full) */}
+          <div className="h-full">
+            <ListaCategorias />
+          </div>
         </div>
-
-        <button
-          onClick={lidarComBusca}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          Buscar
-        </button>
       </div>
-
-      {carregandoMunicipio && <p className="text-sm text-gray-500 mt-3">Buscando...</p>}
-
-      {erroMunicipio && <p className="text-sm text-red-600 mt-3">{erroMunicipio}</p>}
-
-      {!carregandoMunicipio && !erroMunicipio && dadosMunicipio.length === 0 && municipio && (
-        <p className="text-sm text-gray-400 mt-3">
-          Nenhum dado encontrado para "{municipio}".
-        </p>
-      )}
-
-      {/* flex-1 aqui ajuda o gráfico a preencher a altura disponível */}
-      <div className="mt-4 flex-1">
-        <GraficoEvolucaoAnual dados={dadosMunicipio} />
-      </div>
-    </div>
-    
-    {/* 3. A lista ocupa 1/3 do espaço restante e estica na altura (h-full) */}
-    <div className="h-full">
-      <ListaCategorias />
-    </div>
-  </div>
-</div>
     </div>
   );
 }

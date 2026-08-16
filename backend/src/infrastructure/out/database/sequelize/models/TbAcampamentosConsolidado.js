@@ -52,7 +52,7 @@ const TbAcampamentosConsolidado = sequelize.define('TbAcampamentosConsolidado', 
     allowNull: true,
   },
 }, {
-  tableName: 'tb_acampamentos_consolidado',
+  tableName: 'tb_acampamentos_turisticos_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

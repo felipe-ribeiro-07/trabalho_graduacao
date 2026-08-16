@@ -1,12 +1,12 @@
 // src/infrastructure/in/adapters/http/controllers/AcampamentosTuristicosController.ts
 import { Request, Response } from 'express';
-import { EvolucaoAnualUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUseCase';
-import { RankingPorUFUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/RankingPorUFUseCase';
-import { RankingPorMunicipioUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/RankingPorMunicipioUseCase';
-import { CompararAnosUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/ComparaPorAnoUseCase';
-import { UltimosCincoAnosUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/CompararAnosPorUFUseCase';
-import { EvolucaoAnualPorUfUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/EvolucaoAnualUFUseCase';
-import { AcumuladoMuncipalUseCase } from '../../../../../application/use-cases/AcampamentosTuristicos/AcumuladoMunicipalUSeCase';
+import { EvolucaoAnualUseCase } from '../../../../../application/use-cases/EvolucaoAnualUseCase';
+import { RankingPorUFUseCase } from '../../../../../application/use-cases/RankingPorUFUseCase';
+import { RankingPorMunicipioUseCase } from '../../../../../application/use-cases/RankingPorMunicipioUseCase';
+import { CompararAnosUseCase } from '../../../../../application/use-cases/ComparaPorAnoUseCase';
+import { UltimosCincoAnosUseCase } from '../../../../../application/use-cases/CompararAnosPorUFUseCase';
+import { EvolucaoAnualPorUfUseCase } from '../../../../../application/use-cases/EvolucaoAnualUFUseCase';
+import { AcumuladoMuncipalUseCase } from '../../../../../application/use-cases/AcumuladoMunicipalUSeCase';
 
 interface DashboardControllerDeps {
   evolucaoAnual: EvolucaoAnualUseCase;
@@ -141,6 +141,7 @@ export class DashboardController {
       const muncipioParam = String(req.query.municipio ?? '');
       const municipio = muncipioParam.trim();
       const resultado = await this.acumuladoMuncipal.execute(municipio);
+
       return res.json(resultado);
     } catch (error) {
       console.error('Erro em handleAcumuladoMuncipal:', error);

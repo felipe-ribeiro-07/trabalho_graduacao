@@ -42,6 +42,9 @@ O ETL:
 - Quando só existem tabelas trimestrais, usa o maior trimestre.
 - Detecta automaticamente colunas comuns do CADASTUR.
 - Normaliza datas.
+- NORMALIZA E MESCLA AUTOMATICAMENTE categorias com nomes similares
+  (erros de digitação, plural/singular, sufixos de sheet/cópia/backup),
+  evitando criar tabelas destino duplicadas para a mesma categoria.
 - Usa processamento em lotes.
 - Usa cursor buffered para evitar "Unread result found".
 - Reconecta automaticamente ao MySQL.
@@ -56,6 +59,7 @@ import os
 import re
 import sys
 import time
+import difflib
 from datetime import datetime, date
 
 import mysql.connector
@@ -121,6 +125,211 @@ MAX_TENTATIVAS_CONEXAO = 5
 
 
 INTERVALO_RECONEXAO = 3
+
+
+# =============================================================================
+# 2.1 NORMALIZAÇÃO AUTOMÁTICA DE CATEGORIAS
+# =============================================================================
+
+"""
+Algumas tabelas de origem do CADASTUR são nomeadas de forma inconsistente
+entre anos diferentes (erro de digitação, plural/singular, sufixos de
+sheet/cópia/backup gerados na importação de Excel/CSV). Sem tratamento,
+o ETL trataria essas variantes como categorias diferentes, criando
+tabelas destino duplicadas.
+
+Esta seção:
+
+1. Remove sufixos de ruído conhecidos do nome da categoria.
+2. Agrupa (mescla) categorias remanescentes que são muito similares
+   entre si usando comparação de texto (difflib).
+3. Loga claramente quais categorias foram mescladas, para conferência.
+
+IMPORTANTE: a mesclagem acontece ANTES do processamento de cada
+categoria, para que a tabela destino seja truncada e recriada apenas
+UMA vez por grupo (evitando que uma variante apague os dados que a
+outra variante acabou de inserir).
+"""
+
+# Sufixos de ruído conhecidos, comuns em exports de Excel/CSV mal nomeados.
+# Removidos ANTES da comparação de similaridade.
+PADROES_RUIDO = [
+    r"_SHEET\d+$",
+    r"_PLANILHA\d*$",
+    r"_COPY$",
+    r"_C[OÓ]PIA$",
+    r"_BACKUP$",
+    r"_BKP$",
+    r"_V\d+$",
+    r"_OLD$",
+    r"_ANTIGO$",
+    # Indicadores de formato que vazaram para dentro do nome da
+    # categoria (regex de origem não bateu com _FORMATO_ANO exato,
+    # então o formato acabou capturado como parte da categoria).
+    # Removidos por último, podendo deixar mais de um resíduo em
+    # sequência (ex: "_XLS_SHEET1" -> remove SHEET1, depois XLS).
+    r"_(XLSX|XLS|CSV)$",
+]
+
+# Aplica os padrões de ruído em loop até não sobrar mais nada para
+# remover (cobre casos como "_XLS_SHEET1", onde múltiplos sufixos
+# de ruído aparecem colados um no outro).
+APLICAR_RUIDO_REPETIDAMENTE = True
+
+# Categorias que NUNCA devem ser mescladas automaticamente,
+# mesmo que pareçam similares (proteção contra falso positivo).
+# Preencha com nomes de categoria (já sem ruído) caso o clustering
+# junte algo que na verdade deveria continuar separado.
+CATEGORIAS_NAO_MESCLAR = set()
+
+# Limiar de similaridade (0 a 1). 0.90 é conservador o suficiente
+# para pegar erros de digitação/plural sem juntar categorias diferentes.
+LIMIAR_SIMILARIDADE = 0.90
+
+
+def limpar_ruido_categoria(categoria):
+
+    limpo = categoria
+
+    if APLICAR_RUIDO_REPETIDAMENTE:
+
+        # Repete a limpeza até estabilizar (nenhum padrão mais
+        # remove nada), cobrindo sufixos de ruído colados em
+        # sequência (ex: "_XLS_SHEET1").
+        while True:
+
+            anterior = limpo
+
+            for padrao in PADROES_RUIDO:
+
+                limpo = re.sub(
+                    padrao,
+                    "",
+                    limpo,
+                    flags=re.IGNORECASE
+                )
+
+            if limpo == anterior:
+                break
+
+    else:
+
+        for padrao in PADROES_RUIDO:
+
+            limpo = re.sub(
+                padrao,
+                "",
+                limpo,
+                flags=re.IGNORECASE
+            )
+
+    return limpo
+
+
+def agrupar_categorias_similares(categorias_brutas):
+    """
+    Recebe {categoria: [tabelas]} com nomes ainda "sujos" e devolve
+    (categorias_finais, relatorio_mesclagens), onde categorias_finais
+    é {categoria_canonica: [tabelas]} já mesclado.
+
+    A categoria canônica escolhida em cada grupo é a que possui MAIS
+    tabelas de origem associadas (maior histórico), o que tende a ser
+    o nome "correto" mais usado ao longo dos anos.
+    """
+
+    # 1) Remove ruído conhecido primeiro
+    limpas = {}
+
+    for categoria, tabelas in categorias_brutas.items():
+
+        categoria_limpa = limpar_ruido_categoria(categoria)
+
+        limpas.setdefault(
+            categoria_limpa,
+            []
+        ).extend(tabelas)
+
+    # 2) Clusteriza por similaridade de texto
+    nomes = sorted(limpas.keys())
+
+    visitados = set()
+
+    grupos = []
+
+    for nome in nomes:
+
+        if nome in visitados:
+            continue
+
+        grupo = [nome]
+
+        visitados.add(nome)
+
+        for outro in nomes:
+
+            if outro in visitados:
+                continue
+
+            if (
+                nome in CATEGORIAS_NAO_MESCLAR
+                or outro in CATEGORIAS_NAO_MESCLAR
+            ):
+                continue
+
+            similaridade = difflib.SequenceMatcher(
+                None,
+                nome,
+                outro
+            ).ratio()
+
+            if similaridade >= LIMIAR_SIMILARIDADE:
+
+                grupo.append(outro)
+
+                visitados.add(outro)
+
+        grupos.append(grupo)
+
+    # 3) Monta resultado final, escolhendo nome canônico por grupo
+    resultado = {}
+
+    relatorio_mesclagens = []
+
+    for grupo in grupos:
+
+        # Categoria canônica = a com mais tabelas de origem associadas.
+        # Em empate, prevalece a de nome mais curto (tende a ser a mais
+        # "limpa", sem sufixos residuais que o PADROES_RUIDO não pegou).
+        canonica = max(
+            grupo,
+            key=lambda nome: (
+                len(limpas[nome]),
+                -len(nome),
+            )
+        )
+
+        tabelas_unificadas = []
+
+        for nome in grupo:
+
+            tabelas_unificadas.extend(
+                limpas[nome]
+            )
+
+            # Garante que cada configuração de tabela carregue
+            # a categoria já normalizada/canônica.
+            for configuracao in limpas[nome]:
+                configuracao["categoria"] = canonica
+
+        resultado[canonica] = tabelas_unificadas
+
+        if len(grupo) > 1:
+
+            relatorio_mesclagens.append(
+                (canonica, grupo)
+            )
+
+    return resultado, relatorio_mesclagens
 
 
 # =============================================================================
@@ -392,6 +601,41 @@ def descobrir_todas_categorias(conexao):
         ).append(
             configuracao
         )
+
+    # -------------------------------------------------------------------
+    # NORMALIZA E MESCLA AUTOMATICAMENTE categorias com nomes similares
+    # (typos, plural/singular, sufixos de sheet/cópia/backup).
+    # -------------------------------------------------------------------
+
+    categorias, mesclagens = agrupar_categorias_similares(
+        categorias
+    )
+
+    if mesclagens:
+
+        titulo(
+            "CATEGORIAS MESCLADAS AUTOMATICAMENTE "
+            "(confira se está correto):"
+        )
+
+        for canonica, variantes in mesclagens:
+
+            outras = [
+                v for v in variantes
+                if v != canonica
+            ]
+
+            log_aviso(
+                f"'{canonica}' <- mesclou com: "
+                + ", ".join(outras)
+            )
+
+        log_info(
+            "Se alguma mesclagem acima estiver errada, adicione "
+            "o(s) nome(s) em CATEGORIAS_NAO_MESCLAR e rode novamente."
+        )
+
+        separador()
 
     for lista in categorias.values():
 
@@ -983,23 +1227,23 @@ def criar_tabela_acumulada(
 
             `ano` SMALLINT NOT NULL,
 
-            `origem_tabela` VARCHAR(255) NULL,
+            `origem_tabela` VARCHAR(500) NULL,
 
             `razao_social` TEXT NULL,
 
             `nome_fantasia` TEXT NULL,
 
-            `cnpj` VARCHAR(255) NULL,
+            `cnpj` VARCHAR(500) NULL,
 
-            `porte` VARCHAR(255) NULL,
+            `porte` VARCHAR(500) NULL,
 
-            `situacao` VARCHAR(255) NULL,
+            `situacao` VARCHAR(500) NULL,
 
             `segmento` TEXT NULL,
 
-            `uf` VARCHAR(20) NULL,
+            `uf` VARCHAR(100) NULL,
 
-            `municipio` VARCHAR(255) NULL,
+            `municipio` VARCHAR(500) NULL,
 
             `data_inicio_operacao` DATE NULL,
 
@@ -1456,50 +1700,45 @@ def processar_tabela(
         colunas
     )
 
-    log_info(
-        f"Mapeamento de razão social: "
-        f"{mapeamento['razao_social'] or 'NÃO ENCONTRADO'}"
-    )
+    # Rótulo amigável para cada campo do mapeamento, usado tanto no
+    # log linha-a-linha quanto no relatório final de mapeamentos
+    # faltantes.
+    ROTULOS_CAMPOS = {
+        "razao_social": "razão social",
+        "nome_fantasia": "nome fantasia",
+        "cnpj": "CNPJ",
+        "porte": "porte",
+        "situacao": "situação",
+        "segmento": "segmento",
+        "uf": "UF",
+        "municipio": "município",
+        "data_inicio_operacao": "data início operação",
+    }
 
-    log_info(
-        f"Mapeamento de nome fantasia: "
-        f"{mapeamento['nome_fantasia'] or 'NÃO ENCONTRADO'}"
-    )
+    campos_nao_encontrados = []
 
-    log_info(
-        f"Mapeamento de CNPJ: "
-        f"{mapeamento['cnpj'] or 'NÃO ENCONTRADO'}"
-    )
+    for campo, rotulo in ROTULOS_CAMPOS.items():
 
-    log_info(
-        f"Mapeamento de porte: "
-        f"{mapeamento['porte'] or 'NÃO ENCONTRADO'}"
-    )
+        valor = mapeamento.get(campo)
 
-    log_info(
-        f"Mapeamento de segmento: "
-        f"{mapeamento['segmento'] or 'NÃO ENCONTRADO'}"
-    )
+        log_info(
+            f"Mapeamento de {rotulo}: "
+            f"{valor or 'NÃO ENCONTRADO'}"
+        )
 
-    log_info(
-        f"Mapeamento de município: "
-        f"{mapeamento['municipio'] or 'NÃO ENCONTRADO'}"
-    )
+        if not valor:
 
-    log_info(
-        f"Mapeamento de UF: "
-        f"{mapeamento['uf'] or 'NÃO ENCONTRADO'}"
-    )
+            campos_nao_encontrados.append(
+                rotulo
+            )
 
-    log_info(
-        f"Mapeamento de situação: "
-        f"{mapeamento['situacao'] or 'NÃO ENCONTRADO'}"
-    )
+    if campos_nao_encontrados:
 
-    log_info(
-        f"Mapeamento de data início operação: "
-        f"{mapeamento['data_inicio_operacao'] or 'NÃO ENCONTRADO'}"
-    )
+        log_aviso(
+            f"'{tabela_origem}': campo(s) sem mapeamento "
+            f"(gravados como NULL): "
+            + ", ".join(campos_nao_encontrados)
+        )
 
     total_linhas = 0
 
@@ -1672,6 +1911,9 @@ def processar_tabela(
 
         "inseridas":
             total_inseridas,
+
+        "campos_nao_encontrados":
+            campos_nao_encontrados,
 
     }
 
@@ -1866,6 +2108,8 @@ def processar_categoria(
 
     resultados_erro = []
 
+    mapeamentos_incompletos = []
+
     total_categoria = 0
 
     # -----------------------------------------------------------------
@@ -1904,6 +2148,21 @@ def processar_categoria(
             total_categoria += (
                 resultado["inseridas"]
             )
+
+            if resultado.get("campos_nao_encontrados"):
+
+                mapeamentos_incompletos.append(
+                    {
+                        "tabela":
+                            resultado["tabela"],
+
+                        "ano":
+                            resultado["ano"],
+
+                        "campos":
+                            resultado["campos_nao_encontrados"],
+                    }
+                )
 
         except Exception as erro:
 
@@ -1985,6 +2244,9 @@ def processar_categoria(
         "tabelas_erro":
             resultados_erro,
 
+        "mapeamentos_incompletos":
+            mapeamentos_incompletos,
+
     }
 
 
@@ -2046,6 +2308,11 @@ def main():
 
         log_info(
             "CNPJ destino: VARCHAR(255)"
+        )
+
+        log_info(
+            f"Mesclagem automática de categorias similares: "
+            f"ATIVA (limiar={LIMIAR_SIMILARIDADE})"
         )
 
         if not PROCESSAR_TODAS_CATEGORIAS:
@@ -2178,6 +2445,9 @@ def main():
                                     "erro": str(erro),
                                 }
                             ],
+
+                        "mapeamentos_incompletos":
+                            [],
                     }
                 )
 
@@ -2276,6 +2546,64 @@ def main():
                         f"-> "
                         f"{erro_item['erro']}"
                     )
+
+        # -------------------------------------------------------------
+        # TABELAS COM MAPEAMENTO DE COLUNAS INCOMPLETO
+        # -------------------------------------------------------------
+        #
+        # Mostrado junto do resumo final (mesmo em execuções sem
+        # nenhum erro), para facilitar encontrar tabelas de origem
+        # cuja coluna de município/UF/CNPJ/etc não foi reconhecida
+        # automaticamente e por isso foi gravada como NULL.
+
+        categorias_com_mapeamento_incompleto = [
+            item
+            for item
+            in resumo_categorias
+            if item.get("mapeamentos_incompletos")
+        ]
+
+        if categorias_com_mapeamento_incompleto:
+
+            separador()
+
+            log_aviso(
+                "TABELAS COM MAPEAMENTO DE COLUNAS INCOMPLETO "
+                "(campos abaixo foram gravados como NULL):"
+            )
+
+            separador()
+
+            total_tabelas_com_pendencia = 0
+
+            for item in categorias_com_mapeamento_incompleto:
+
+                log_aviso(
+                    f"Categoria: {item['categoria']} "
+                    f"-> {item['tabela_destino']}"
+                )
+
+                for pendencia in item["mapeamentos_incompletos"]:
+
+                    total_tabelas_com_pendencia += 1
+
+                    log_aviso(
+                        f"   Tabela: {pendencia['tabela']} "
+                        f"(ano={pendencia['ano']}) "
+                        f"-> campo(s) não encontrado(s): "
+                        + ", ".join(pendencia["campos"])
+                    )
+
+            separador()
+
+            log_aviso(
+                f"Total de tabelas de origem com mapeamento "
+                f"incompleto: {total_tabelas_com_pendencia}. "
+                f"Ajuste as possibilidades de nome de coluna em "
+                f"'descobrir_mapeamento' (seção 15) se algum desses "
+                f"campos existir na tabela com um nome diferente "
+                f"do esperado."
+            )
 
         separador()
 
