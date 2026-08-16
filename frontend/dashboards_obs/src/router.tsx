@@ -10,14 +10,14 @@ import { Layout } from './layouts/header.tsx'
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Layout />, // O Layout é o elemento pai
+    element: <Layout />, 
     children: [
       {
-        index: true, // Isso diz ao router: "quando a rota for '/', renderize a Home"
+        index: true, 
         element: <Home />,
       },
       {
-        path: 'acampamentos-turisticos', // Não precisa da barra (/) inicial aqui nos filhos
+        path: 'acampamentos-turisticos', 
         element: <EvolucaoAnualAcampamentos />,
       },
       {
