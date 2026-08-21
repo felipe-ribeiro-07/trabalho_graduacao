@@ -146,7 +146,7 @@ export function GraficoRegioesRanking({
         formatter={(value, _name, item: any) => {
           const numero = Number(value);
           return [
-            `${numero.toLocaleString('pt-BR')} guias (${item?.payload?.percentual}%)`,
+            `${numero.toLocaleString('pt-BR')}  (${item?.payload?.percentual}%)`,
             item?.payload?.name,
           ];
         }}

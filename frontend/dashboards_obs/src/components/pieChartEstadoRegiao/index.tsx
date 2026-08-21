@@ -155,7 +155,7 @@ export function GraficoRegioesEstados({ ufAtiva, dadosEstados, dadosCidades }: G
               ))}
             </Pie>
             <Tooltip
-              formatter={(value, name) => [`${value} acampamentos`, name ?? '']}
+              formatter={(value, name) => [`${value} `, name ?? '']}
               contentStyle={{
                 borderRadius: '8px',
                 border: 'none',

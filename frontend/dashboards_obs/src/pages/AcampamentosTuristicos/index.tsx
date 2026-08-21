@@ -68,31 +68,41 @@ export function EvolucaoAnualAcampamentos() {
   const [dadosE1, setDadosE1] = useState<any[]>([]);
   const [dadosE2, setDadosE2] = useState<any[]>([]);
 
-  // Busca por município
-  const [municipio, setMunicipio] = useState<string>('');
-  const [dadosMunicipio, setDadosMunicipio] = useState<any[]>([]);
+  // Busca por município (comparativo entre duas cidades)
+  const [municipio1, setMunicipio1] = useState<string>('');
+  const [municipio2, setMunicipio2] = useState<string>('');
+  const [dadosMunicipio1, setDadosMunicipio1] = useState<any[]>([]);
+  const [dadosMunicipio2, setDadosMunicipio2] = useState<any[]>([]);
   const [carregandoMunicipio, setCarregandoMunicipio] = useState(false);
   const [erroMunicipio, setErroMunicipio] = useState<string | null>(null);
 
   const lidarComBusca = () => {
-    if (!municipio) return;
+    if (!municipio1) return;
 
-    async function buscarDadosMunicipio() {
+    async function buscarDadosMunicipios() {
       setCarregandoMunicipio(true);
       setErroMunicipio(null);
       try {
-        const resultado = await AcampamentosTuristicosServices.AcumuladoAnualMunicipio(municipio);
-        setDadosMunicipio(resultado);
+        const resultado1 = await AcampamentosTuristicosServices.AcumuladoAnualMunicipio(municipio1);
+        setDadosMunicipio1(resultado1);
+
+        if (municipio2) {
+          const resultado2 = await AcampamentosTuristicosServices.AcumuladoAnualMunicipio(municipio2);
+          setDadosMunicipio2(resultado2);
+        } else {
+          setDadosMunicipio2([]);
+        }
       } catch (erro) {
-        console.error('Erro ao buscar dados do município:', erro);
-        setErroMunicipio('Não foi possível buscar os dados desse município.');
-        setDadosMunicipio([]);
+        console.error('Erro ao buscar dados dos municípios:', erro);
+        setErroMunicipio('Não foi possível buscar os dados desses municípios.');
+        setDadosMunicipio1([]);
+        setDadosMunicipio2([]);
       } finally {
         setCarregandoMunicipio(false);
       }
     }
 
-    buscarDadosMunicipio();
+    buscarDadosMunicipios();
   };
 
   // 1. CARREGAMENTO INICIAL DOS DADOS GERAIS
@@ -389,10 +399,10 @@ export function EvolucaoAnualAcampamentos() {
         )}
       </div>
 
-      {/* Busca por Município */}
+      {/* Busca por Município (comparativo entre duas cidades) */}
       <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* 2. O gráfico ocupa 2/3 do espaço (col-span-2) */}
+          {/* Gráfico ocupa 2/3 do espaço (col-span-2) */}
           <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[450px] relative">
             <h3 className="font-medium text-gray-700 pb-4 text-center">
               Evolução Histórica por Município
@@ -400,13 +410,26 @@ export function EvolucaoAnualAcampamentos() {
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
               <div className="flex-1 w-full">
                 <TextInput
-                  label="Buscar Município"
+                  label="Município Principal"
                   placeholder="Ex: Ibiúna"
-                  value={municipio}
-                  onChange={(e) => setMunicipio(e.target.value)}
+                  value={municipio1}
+                  onChange={(e) => setMunicipio1(e.target.value)}
                   onKeyDown={(e: React.KeyboardEvent) => {
                     if (e.key === 'Enter') lidarComBusca();
                   }}
+                />
+              </div>
+
+              <div className="flex-1 w-full">
+                <TextInput
+                  label="Comparar com (Opcional)"
+                  placeholder="Ex: São Roque"
+                  value={municipio2}
+                  onChange={(e) => setMunicipio2(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') lidarComBusca();
+                  }}
+                  disabled={!municipio1}
                 />
               </div>
 
@@ -421,14 +444,23 @@ export function EvolucaoAnualAcampamentos() {
 
             {erroMunicipio && <p className="text-sm text-red-600 mt-3">{erroMunicipio}</p>}
 
-            {!carregandoMunicipio && !erroMunicipio && dadosMunicipio.length === 0 && municipio && (
+            {!carregandoMunicipio && !erroMunicipio && dadosMunicipio1.length === 0 && municipio1 && (
               <p className="text-sm text-gray-400 mt-3">
-                Nenhum dado encontrado para "{municipio}".
+                Nenhum dado encontrado para "{municipio1}".
               </p>
             )}
 
             <div className="mt-4 flex-1">
-              <GraficoEvolucaoAnual dados={dadosMunicipio} />
+              {municipio2 && dadosMunicipio2.length > 0 ? (
+                <GraficoComparativoEstados
+                  dadosEstado1={dadosMunicipio1}
+                  dadosEstado2={dadosMunicipio2}
+                  nomeEstado1={municipio1}
+                  nomeEstado2={municipio2}
+                />
+              ) : (
+                <GraficoEvolucaoAnual dados={dadosMunicipio1} />
+              )}
             </div>
           </div>
 

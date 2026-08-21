@@ -47,7 +47,7 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-all duration-200">
-      <div className="mx-auto max-w-7xl px-6 lg:px-12">
+      <div className="mx-auto max-w-7xl px-6 lg:px-12 ">
         <div className="flex h-24 items-center justify-between">
           
           {/* Logo / Título */}

@@ -28,7 +28,7 @@ export function Layout() {
       />
       
       {/* O conteúdo das suas páginas vai renderizar aqui dentro */}
-      <main className="flex-1 w-full max-w-7xl mx-auto">
+      <main className="">
         <Outlet />
       </main>
 
