@@ -1,0 +1,61 @@
+# Ambiente de PRODUÇÃO
+# Requer um arquivo .env na raiz (veja .env.example) com as senhas definidas.
+# Subir:    docker compose up --build -d
+# Derrubar: docker compose down
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no .env}
+      MYSQL_DATABASE: ${DB_NAME:-obs_fatec}
+      APP_DB_USER: ${APP_DB_USER:-obs_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?defina APP_DB_PASSWORD no .env}
+    # Sem "ports": o banco fica acessível apenas dentro da rede do Docker
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init-prod:/docker-entrypoint-initdb.d:ro
+      # Opcional: carrega o schema/tabelas na primeira subida (roda como root)
+      # - ./schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      # - ./tables.sql:/docker-entrypoint-initdb.d/00-tables.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+      # Ajuste os nomes das variáveis para os que o seu backend lê
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-obs_fatec}
+      - DB_USER=${APP_DB_USER:-obs_app}
+      - DB_PASSWORD=${APP_DB_PASSWORD}
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend/dashboards_obs
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

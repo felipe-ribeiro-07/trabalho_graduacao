@@ -75,7 +75,7 @@ DB_CONFIG = {
     "port": int(os.getenv("DB_PORT", "3306")),
     "user": os.getenv("DB_USER", "root"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "CADASTUR"),
+    "database": os.getenv("DB_NAME", "obs_fatec"),
     "charset": "utf8mb4",
     "use_unicode": True,
     "autocommit": False,

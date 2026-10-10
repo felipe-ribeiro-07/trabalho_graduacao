@@ -1,0 +1,70 @@
+# Ambiente de DESENVOLVIMENTO com hot-reload e banco com acesso root
+# Subir:    docker compose -f docker-compose.dev.yml up --build
+# Derrubar: docker compose -f docker-compose.dev.yml down
+# Recriar o banco do zero (reexecuta os scripts de init):
+#           docker compose -f docker-compose.dev.yml down -v
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-obs_fatec}
+      DEV_DB_USER: ${DEV_DB_USER:-dev}
+      DEV_DB_PASSWORD: ${DEV_DB_PASSWORD:-dev}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data_dev:/var/lib/mysql
+      - ./db/init-dev:/docker-entrypoint-initdb.d:ro
+      # Opcional: carrega o schema/tabelas na primeira subida
+      # - ./schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      # - ./tables.sql:/docker-entrypoint-initdb.d/00-tables.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=development
+      # Ajuste os nomes das variáveis para os que o seu backend lê
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-obs_fatec}
+      - DB_USER=${DEV_DB_USER:-dev}
+      - DB_PASSWORD=${DEV_DB_PASSWORD:-dev}
+    volumes:
+      # código-fonte sincronizado com o container (hot-reload)
+      - ./backend:/app
+      # volume anônimo para não sobrescrever o node_modules do container
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend/dashboards_obs
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend/dashboards_obs:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  db_data_dev:

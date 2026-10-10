@@ -2,21 +2,21 @@ const express = require('express');
 const cors = require('cors');
 
 //Rotas//
-const AcampamentoTuristicoRoutes = require('../backend/src/infrastructure/in/adapters/http/routes/AcampamentoTuristico');
-const GuiasTuristicosRoutes = require('../backend/src/infrastructure/in/adapters/http/routes/GuiasTuristico');
-const LocadoraDeVeiculosRoutes = require('../backend/src/infrastructure/in/adapters/http/routes/LocadoraDeVeiculos');
-const AgenciasDeTurismo = require("../backend/src/infrastructure/in/adapters/http/routes/AgenciasDeTurismo")
-const CasaDeEspetaculos = require("../backend/src/infrastructure/in/adapters/http/routes/CasaDeEspetaculos")
-const CentroDeConvencoes = require("../backend/src/infrastructure/in/adapters/http/routes/CentroDeConvencoes")
-const EmpreendimentosDeApoioAoTurismoNauticoOuPesca = require("../backend/src/infrastructure/in/adapters/http/routes/EmpreendimentosDeApoioAoTurismoNauticoOuPesca") 
-const EmpreendimentosDeEntreterimentoLazerParquesAquaticos = require("../backend/src/infrastructure/in/adapters/http/routes/EmpreendimentosDeEntretrimentoLazerParquesAquaticos")
-const MeiosDeHospedagem = require("../backend/src/infrastructure/in/adapters/http/routes/MeiosDeHospedagem")
-const OrganizadoraDeEventos = require("../backend/src/infrastructure/in/adapters/http/routes/OrganizadoraDeEventos")
-const ParquesTematicos = require("../backend/src/infrastructure/in/adapters/http/routes/ParquesTematicos")
-const PrestadoresEspecializadosSeguimentoTuristico = require("../backend/src/infrastructure/in/adapters/http/routes/PrestadoresDeServicosEspecializados")
-const PrestadoresDeServicosDeInfra = require("../backend/src/infrastructure/in/adapters/http/routes/PrestadoresDeServicosDeInfra")
-const RestaurantesBaresECafes = require("../backend/src/infrastructure/in/adapters/http/routes/RestaurantesBaresECafes")
-const TransportadoraTuristicas = require("../backend/src/infrastructure/in/adapters/http/routes/TransportadoraTuristica")
+const AcampamentoTuristicoRoutes = require('./src/infrastructure/in/adapters/http/routes/AcampamentoTuristico');
+const GuiasTuristicosRoutes = require('./src/infrastructure/in/adapters/http/routes/GuiasTuristico');
+const LocadoraDeVeiculosRoutes = require('./src/infrastructure/in/adapters/http/routes/LocadoraDeVeiculos');
+const AgenciasDeTurismo = require("./src/infrastructure/in/adapters/http/routes/AgenciasDeTurismo")
+const CasaDeEspetaculos = require("./src/infrastructure/in/adapters/http/routes/CasaDeEspetaculos")
+const CentroDeConvencoes = require("./src/infrastructure/in/adapters/http/routes/CentroDeConvencoes")
+const EmpreendimentosDeApoioAoTurismoNauticoOuPesca = require("./src/infrastructure/in/adapters/http/routes/EmpreendimentosDeApoioAoTurismoNauticoOuPesca") 
+const EmpreendimentosDeEntreterimentoLazerParquesAquaticos = require("./src/infrastructure/in/adapters/http/routes/EmpreendimentosDeEntretrimentoLazerParquesAquaticos")
+const MeiosDeHospedagem = require("./src/infrastructure/in/adapters/http/routes/MeiosDeHospedagem")
+const OrganizadoraDeEventos = require("./src/infrastructure/in/adapters/http/routes/OrganizadoraDeEventos")
+const ParquesTematicos = require("./src/infrastructure/in/adapters/http/routes/ParquesTematicos")
+const PrestadoresEspecializadosSeguimentoTuristico = require("./src/infrastructure/in/adapters/http/routes/PrestadoresDeServicosEspecializados")
+const PrestadoresDeServicosDeInfra = require("./src/infrastructure/in/adapters/http/routes/PrestadoresDeServicosDeInfra")
+const RestaurantesBaresECafes = require("./src/infrastructure/in/adapters/http/routes/RestaurantesBaresECafes")
+const TransportadoraTuristicas = require("./src/infrastructure/in/adapters/http/routes/TransportadoraTuristica")
 
 
 
@@ -27,7 +27,7 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors({
-  origin: 'https://vbm6qvk5-5173.brs.devtunnels.ms',
+  origin: 'http://localhost:5173',
   credentials: true 
 }));
 

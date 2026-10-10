@@ -1,0 +1,27 @@
+# Dependências (qualquer nível: raiz, backend, frontend/dashboards_obs)
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Variáveis de ambiente e backups (podem ter senhas)
+.env
+.env.*
+!.env.example
+*.env.save
+.env.save
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache e arquivos de sistema
+.cache/
+.vite/
+coverage/
+.DS_Store
+Thumbs.db

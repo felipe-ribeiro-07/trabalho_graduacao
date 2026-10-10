@@ -1,0 +1,20 @@
+# ---- Backend (DEV) com hot-reload (tsx: roda server.js e o TypeScript de src/) ----
+FROM node:20-alpine
+
+# pnpm via corepack (já vem no Node 20)
+RUN corepack enable
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+RUN pnpm install
+
+# O código-fonte é montado via volume (docker-compose.dev.yml),
+# então qualquer alteração é refletida em tempo real.
+COPY . .
+
+EXPOSE 3000
+
+# Roda direto, sem compilar para dist, e reinicia a cada mudança.
+# nodemon -L = modo polling (necessário para detectar mudanças em volumes no Windows)
+CMD ["pnpm", "dlx", "nodemon", "-L", "--watch", ".", "--ignore", "node_modules", "--ignore", "dist", "--ext", "ts,js,json", "--exec", "pnpm exec tsx server.js"]
