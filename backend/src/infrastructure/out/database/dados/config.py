@@ -49,10 +49,10 @@ PASTAS_IGNORADAS = {
 # ============================================================================
 
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
+    "host": os.environ.get("DB_HOST", "127.0.0.1"),
     "port": int(os.environ.get("DB_PORT", "3306")),
-    "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", ""),
+    "user": os.environ.get("DB_USER", "dev"),
+    "password": os.environ.get("DB_PASSWORD", "dev"),
     "database": os.environ.get("DB_NAME", "obs_fatec"),
 
     "connection_timeout": 60,

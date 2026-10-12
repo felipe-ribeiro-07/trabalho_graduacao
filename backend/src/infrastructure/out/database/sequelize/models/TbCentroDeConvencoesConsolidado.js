@@ -52,7 +52,7 @@ const TbCentroDeConvencoesConsolidado = sequelize.define('TbCentroDeConvencoesCo
     allowNull: true,
   },
 }, {
-  tableName: 'tb_centrodeconvencoes_acumulado',
+  tableName: 'tb_centros_convencoes_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

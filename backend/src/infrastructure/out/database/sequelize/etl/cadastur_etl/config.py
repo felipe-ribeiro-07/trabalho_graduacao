@@ -4,16 +4,12 @@
 import os
 
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", "3306")),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "obs_fatec"),
-    "charset": "utf8mb4",
-    "use_unicode": True,
-    "autocommit": False,
+   "host": os.environ.get("DB_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("DB_PORT", "3306")),
+    "user": os.environ.get("DB_USER", "dev"),
+    "password": os.environ.get("DB_PASSWORD", "dev"),
+    "database": os.environ.get("DB_NAME", "obs_fatec"),
     "use_pure": True,   # <- evita a extensão em C
-
 }
 
 # ----------------------------- Origem ---------------------------------------
