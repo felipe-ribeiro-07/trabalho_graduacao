@@ -1,13 +1,13 @@
-import { api } from './api.tsx';
+import { api } from './api.ts';
 
 interface RankingMunicipioParams {
   uf?: string;
   ano?: string | number;
 }
 
-class AgenciasDeTursimoService {
+class AcampamentosTuristicosServices {
   static async EvolucaoAnualAcampamentos(): Promise<any> {
-    const response = await api.get('/agencias-de-turismo/evolucao-anual');
+    const response = await api.get('/acampamento-turistico/evolucao-anual');
     return response.data;
   }
 
@@ -15,7 +15,7 @@ class AgenciasDeTursimoService {
     const params = new URLSearchParams();
     if (ano !== undefined && ano !== '') params.append('ano', String(ano));
 
-    const response = await api.get(`/agencias-de-turismo/ranking-uf?${params.toString()}`);
+    const response = await api.get(`/acampamento-turistico/ranking-uf?${params.toString()}`);
     return response.data;
   }
 
@@ -24,13 +24,13 @@ class AgenciasDeTursimoService {
     if (uf) params.append('uf', uf);
     if (ano !== undefined && ano !== '') params.append('ano', String(ano));
 
-    const response = await api.get(`/agencias-de-turismo/ranking-municipio?${params.toString()}`);
+    const response = await api.get(`/acampamento-turistico/ranking-municipio?${params.toString()}`);
     return response.data;
   }
 
   static async CompararAnos(anos: (string | number)[]): Promise<any> {
     const anosParam = anos.join(',');
-    const response = await api.get(`/agencias-de-turismo/comparar-anos?anos=${anosParam}`);
+    const response = await api.get(`/acampamento-turistico/comparar-anos?anos=${anosParam}`);
     return response.data;
   }
 
@@ -39,7 +39,7 @@ class AgenciasDeTursimoService {
     if (uf) params.append('uf', uf);
     if (ano !== undefined && ano !== '') params.append('ano', String(ano));
 
-    const response = await api.get(`/agencias-de-turismo/ranking-uf?${params.toString()}`);
+    const response = await api.get(`/acampamento-turistico/ranking-uf?${params.toString()}`);
     return response.data;
   }
 
@@ -54,13 +54,13 @@ class AgenciasDeTursimoService {
     if (uf) params.append('uf', uf);
     if (anos && anos.length > 0) params.append('anos', anos.join(','));
     const response = await api.get(
-      `/agencias-de-turismo/ultimos-cinco-anos?${params.toString()}`
+      `/acampamento-turistico/ultimos-cinco-anos?${params.toString()}`
     );
     return response.data;
   }
 
   static async TodosAnosUF({ uf }: { uf: string }): Promise<any> {
-    const response = await api.get(`/agencias-de-turismo/evolucao-anual-uf?uf=${uf}`);
+    const response = await api.get(`/acampamento-turistico/evolucao-anual-uf?uf=${uf}`);
     return response.data;
   }
 
@@ -69,10 +69,10 @@ class AgenciasDeTursimoService {
     params.append('municipio', municipio);
 
     const response = await api.get(
-      `/agencias-de-turismo/acumulado-anual-municipio?${params.toString()}`
+      `/acampamento-turistico/acumulado-anual-municipio?${params.toString()}`
     );
     return response.data;
   }
 }
 
-export default AgenciasDeTursimoService;
+export default AcampamentosTuristicosServices;
