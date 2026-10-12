@@ -1,4 +1,4 @@
-import { api } from './api.tsx';
+import { api } from './api.ts';
 
 interface RankingMunicipioParams {
   uf?: string;

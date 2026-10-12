@@ -1,4 +1,4 @@
-import AcampamentosTuristicosServices from '../../services/acampamentos_turisticos.tsx';
+import AcampamentosTuristicosServices from '../../services/acampamentos_turisticos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

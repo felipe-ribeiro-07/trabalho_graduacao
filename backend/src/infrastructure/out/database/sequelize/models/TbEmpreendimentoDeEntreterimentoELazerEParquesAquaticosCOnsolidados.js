@@ -52,7 +52,7 @@ const TbEmpreendimentoDeEntreterimentoLazerParquesAquaticosConsolidados = sequel
     allowNull: true,
   },
 }, {
-  tableName: 'tb_empreendimentodeentretenimentolazer_parqueaquati_acumulado',
+  tableName: 'tb_empreendimentodeentretenimentolazerpar_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

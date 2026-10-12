@@ -52,7 +52,7 @@ const TbMeiosDeHospedagemCOnsolidado = sequelize.define('TbMeiosDeHospedagemCOns
     allowNull: true,
   },
 }, {
-  tableName: 'tb_meiosdehospedagem_acumulado',
+  tableName: 'tb_meios_hospedagem_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

@@ -52,7 +52,7 @@ const TbPrestadoresEspecializadosEmSegmentoTuristicosConsolidados = sequelize.de
     allowNull: true,
   },
 }, {
-  tableName: 'tb_prestador_especializado_em_segmentos_tur_sticos_acumulado',
+  tableName: 'tb_prestadorespecializadoemsegmentostu_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

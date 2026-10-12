@@ -1,4 +1,4 @@
-import EmpEntreterimentoLazerParquesService from '../../services/emp_entreterimento_lazer_parques_aquaticos.tsx';
+import EmpEntreterimentoLazerParquesService from '../../services/emp_entreterimento_lazer_parques_aquaticos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

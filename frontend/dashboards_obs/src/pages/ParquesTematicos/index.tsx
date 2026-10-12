@@ -1,4 +1,4 @@
-import ParquesTematicosService from '../../services/parques_tematicos.tsx';
+import ParquesTematicosService from '../../services/parques_tematicos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

@@ -1,4 +1,4 @@
-import TransportadoraTuristicaService from '../../services/transportadora_turistica.tsx';
+import TransportadoraTuristicaService from '../../services/transportadora_turistica.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

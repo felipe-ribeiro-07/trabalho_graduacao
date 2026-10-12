@@ -1,4 +1,4 @@
-import MeiosDeHospedagemService from '../../services/meios_hospedagem.tsx';
+import MeiosDeHospedagemService from '../../services/meios_hospedagem.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

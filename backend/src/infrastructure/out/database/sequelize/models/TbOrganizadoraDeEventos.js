@@ -52,7 +52,7 @@ const TbOrganizadoraDeEventos = sequelize.define('TbOrganizadoraDeEventos', {
     allowNull: true,
   },
 }, {
-  tableName: 'tb_organizadora_de_eventos_acumulado',
+  tableName: 'tb_organizadoras_eventos_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

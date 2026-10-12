@@ -52,7 +52,7 @@ const TbParquesTematicosConsolidados = sequelize.define('TbParquesTematicosConso
     allowNull: true,
   },
 }, {
-  tableName: 'tb_parques_tem_ticos_acumulado',
+  tableName: 'tb_parques_tematicos_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

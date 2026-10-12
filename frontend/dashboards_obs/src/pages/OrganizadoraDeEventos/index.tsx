@@ -1,4 +1,4 @@
-import OrganizadoraDeEventosService from '../../services/organizadora_eventos.tsx';
+import OrganizadoraDeEventosService from '../../services/organizadora_eventos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

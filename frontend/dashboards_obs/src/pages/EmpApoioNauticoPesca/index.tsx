@@ -1,4 +1,4 @@
-import EmpApoioNauticoOUPescaService from '../../services/emp_apoio_nautico_pesca.tsx';
+import EmpApoioNauticoOUPescaService from '../../services/emp_apoio_nautico_pesca.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

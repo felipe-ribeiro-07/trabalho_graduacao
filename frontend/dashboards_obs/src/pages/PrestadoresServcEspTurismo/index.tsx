@@ -1,4 +1,4 @@
-import PrestadoresEspecializadosTurismoSeguimentoService from '../../services/pres_especializados_turismo.tsx';
+import PrestadoresEspecializadosTurismoSeguimentoService from '../../services/pres_especializados_turismo.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

@@ -52,7 +52,7 @@ const TbTransportadoraTuristicaConsolidado = sequelize.define('TbTransportadoraT
     allowNull: true,
   },
 }, {
-  tableName: 'tb_transportadoraturistica_acumulado',
+  tableName: 'tb_transportadoras_turisticas_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

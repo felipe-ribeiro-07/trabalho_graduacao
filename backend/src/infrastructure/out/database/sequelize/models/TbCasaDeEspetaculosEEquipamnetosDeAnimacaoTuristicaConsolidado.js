@@ -52,7 +52,7 @@ const TbCasaDeEspetaculosEEquipamentosDeAnimacaoTuristica = sequelize.define('Tb
     allowNull: true,
   },
 }, {
-  tableName: 'tb_casadeespetaculosequipamentosdeanimacaoturistica_acumulado',
+  tableName: 'tb_casadeespetaculosequipamentosdeanimacao_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

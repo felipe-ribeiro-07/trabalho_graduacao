@@ -1,4 +1,4 @@
-import GuiasTuristicosService from '../../services/guias_turisticos.tsx';
+import GuiasTuristicosService from '../../services/guias_turisticos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

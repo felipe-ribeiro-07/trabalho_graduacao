@@ -1,4 +1,4 @@
-import PrestadoresEspecializadosEmInfraService from '../../services/pres_infra.tsx';
+import PrestadoresEspecializadosEmInfraService from '../../services/pres_infra.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

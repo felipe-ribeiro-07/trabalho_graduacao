@@ -52,7 +52,7 @@ const TbEmpreendimentosDeApoioAoTurismoNauticoOuPescaConsolidado = sequelize.def
     allowNull: true,
   },
 }, {
-  tableName: 'tb_empreendimentodeapoioaoturismonauticoouapescades_acumulado',
+  tableName: 'tb_empreendimentodeapoioaoturismonauticoou_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

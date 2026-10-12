@@ -52,7 +52,7 @@ const TbPrestadoresDeServicoDeInfraestruturaConsolidado = sequelize.define('TbPr
     allowNull: true,
   },
 }, {
-  tableName: 'tb_prestadoresdeservicodeinfraestrutura_acumulado',
+  tableName: 'tb_prestadores_infraestrutura_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

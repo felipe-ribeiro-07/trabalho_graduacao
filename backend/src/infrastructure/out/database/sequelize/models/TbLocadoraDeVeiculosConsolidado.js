@@ -52,7 +52,7 @@ const TbLocadoreDeVeiculosConsolidado = sequelize.define('TbLocadoreDeVeiculosCo
     allowNull: true,
   },
 }, {
-  tableName: 'tb_locadoradeveiculos_acumulado',
+  tableName: 'tb_locadoras_veiculos_acumulado',
   timestamps: false,
   indexes: [
     { fields: ['ano'] },

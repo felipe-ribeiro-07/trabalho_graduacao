@@ -1,4 +1,4 @@
-import CentroDeConcoesService from '../../services/centro_convencoes.tsx';
+import CentroDeConcoesService from '../../services/centro_convencoes.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 

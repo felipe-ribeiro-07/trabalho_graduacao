@@ -1,4 +1,4 @@
-import CasaDeEspetaculosService from '../../services/casa_espetaculos.tsx';
+import CasaDeEspetaculosService from '../../services/casa_espetaculos.ts';
 import { PainelTurismo, type TextosPainel } from '../../components/painel/PainelTurismo.tsx';
 import { adaptarServicoLegado } from '../../lib/adaptarServicoLegado.ts';
 
