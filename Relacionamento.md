@@ -1,1 +1,0 @@
-[![Architecture diagram of felipe-ribeiro-07/trabalho_graduacao](https://gitdiagram.com/felipe-ribeiro-07/trabalho_graduacao/diagram.png)](https://gitdiagram.com/felipe-ribeiro-07/trabalho_graduacao?utm_source=readme&utm_medium=picture)
