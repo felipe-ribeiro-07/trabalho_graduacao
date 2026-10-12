@@ -14,32 +14,36 @@ const GrowthCard: React.FC<GrowthCardProps> = ({
   description 
 }) => {
   return (
-    // Removido o w-[340px]. Agora ele ocupa 100% da coluna onde for inserido.
-    <div className="w-full h-full bg-[#f4f9ea] rounded-2xl p-3 md:p-4 shadow-sm flex flex-col items-center justify-center text-center font-sans">
-      
-      {/* Cabeçalho */}
-      <div className="mb-2 md:mb-4">
-        <h2 className="text-xs md:text-sm font-semibold text-gray-900 tracking-tight leading-tight">
+    // flex-1: Garante que todos os cards na mesma coluna dividam a altura igualmente.
+    // Estilo Clean: Fundo branco, sombra sutil, sem bordas pesadas.
+    <article 
+      className="flex-1 flex flex-col justify-between w-full bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 font-sans"
+      aria-labelledby={`card-title-${title.replace(/\s+/g, '-').toLowerCase()}`}
+    >
+      <header className="mb-2">
+        <h3 
+          id={`card-title-${title.replace(/\s+/g, '-').toLowerCase()}`} 
+          className="text-[15px] font-semibold text-gray-500 tracking-tight"
+        >
           {title}
-        </h2>
+        </h3>
         {subtitle && (
-          <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
+          <p className="text-[13px] text-gray-400 mt-0.5 font-medium">
             {subtitle}
           </p>
         )}
+      </header>
+
+      <div className="mt-auto">
+        {/* Tipografia séria e pesada para os números */}
+        <div className="text-[34px] font-bold text-gray-900 mb-1 tracking-[-0.04em] leading-none">
+          {percentage}
+        </div>
+        <p className="text-[13px] text-gray-500 font-medium leading-snug">
+          {description}
+        </p>
       </div>
-
-      {/* Dado Principal */}
-      <div className="text-xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4 tracking-tighter">
-        {percentage}
-      </div>
-
-      {/* Descrição */}
-      <p className="text-[10px] md:text-xs text-gray-700 leading-snug">
-        {description}
-      </p>
-
-    </div>
+    </article>
   );
 };
 

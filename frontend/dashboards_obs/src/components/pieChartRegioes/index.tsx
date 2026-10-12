@@ -2,16 +2,15 @@ import { useMemo } from 'react';
 import {
   Pie,
   PieChart,
-  type PieLabelRenderProps,
   type PieSectorShapeProps,
   Sector,
   Tooltip,
   Legend,
   useActiveTooltipDataPoints,
   useIsTooltipActive,
+  ResponsiveContainer,
 } from 'recharts';
 
-// Mesmo mapa de UF -> Região usado no restante do projeto
 const MAPA_REGIOES: Record<string, string> = {
   AC: 'Norte', AL: 'Nordeste', AP: 'Norte', AM: 'Norte', BA: 'Nordeste', CE: 'Nordeste',
   DF: 'Centro-Oeste', ES: 'Sudeste', GO: 'Centro-Oeste', MA: 'Nordeste', MT: 'Centro-Oeste',
@@ -20,8 +19,8 @@ const MAPA_REGIOES: Record<string, string> = {
   SC: 'Sul', SP: 'Sudeste', SE: 'Nordeste', TO: 'Norte',
 };
 
-const RADIAN = Math.PI / 180;
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+// Paleta corporativa clean
+const COLORS = ['#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF3B30'];
 
 interface ItemRankingUF {
   uf: string;
@@ -31,22 +30,12 @@ interface ItemRankingUF {
 
 interface GraficoRegioesRankingProps {
   dadosRanking: ItemRankingUF[];
-  chaveUf?: string; // nome do campo que identifica a UF, padrão 'uf'
+  chaveUf?: string;
   isAnimationActive?: boolean;
 }
 
-/**
- * Agrupa o ranking (por UF) em totais por região e calcula
- * o percentual que cada região representa do total geral.
- *
- * IMPORTANTE: passe a lista COMPLETA de UFs (ex: dadosEstados,
- * vindo de RankingEstados() sem slice), não uma lista truncada
- * (ex: dadosRanking.slice(0, 14)) — senão regiões cujas UFs não
- * estejam entre as primeiras posições somem do gráfico.
- */
 function agruparPorRegiao(dados: ItemRankingUF[], chaveUf: string) {
   if (!dados || dados.length === 0) return [];
-
   const totaisPorRegiao: Record<string, number> = {};
 
   dados.forEach((item) => {
@@ -57,59 +46,53 @@ function agruparPorRegiao(dados: ItemRankingUF[], chaveUf: string) {
 
   const totalGeral = Object.values(totaisPorRegiao).reduce((soma, v) => soma + v, 0);
 
+  // Ordenamos PRIMEIRO do maior para o menor, e SÓ ENTÃO mapeamos as cores.
+  // Isso garante que a cor principal (Azul) fique sempre com a maior fatia.
   return Object.entries(totaisPorRegiao)
-    .map(([regiao, total]) => ({
+    .sort((a, b) => b[1] - a[1])
+    .map(([regiao, total], index) => ({
       name: regiao,
       value: total,
       percentual: totalGeral ? Number(((total / totalGeral) * 100).toFixed(1)) : 0,
-    }))
-    .sort((a, b) => b.value - a.value);
+      fill: COLORS[index % COLORS.length], // Repassa a cor para a legenda automaticamente
+    }));
 }
-
-const renderCustomizedLabel = ({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  percent,
-}: PieLabelRenderProps) => {
-  if (cx == null || cy == null || innerRadius == null || outerRadius == null) {
-    return null;
-  }
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const ncx = Number(cx);
-  const x = ncx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-  const ncy = Number(cy);
-  const y = ncy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
-
-  return (
-    <text x={x} y={y} fill="white" textAnchor={x > ncx ? 'start' : 'end'} dominantBaseline="central">
-      {`${((percent ?? 1) * 100).toFixed(0)}%`}
-    </text>
-  );
-};
 
 const FatiaRegiao = (props: PieSectorShapeProps) => {
   const pontoAtivo = useActiveTooltipDataPoints();
   const algumaFatiaAtiva = useIsTooltipActive();
   const estaFatiaAtiva = algumaFatiaAtiva && props.payload === pontoAtivo?.[0];
 
-  let fillOpacity: number;
-  if (algumaFatiaAtiva && !estaFatiaAtiva) {
-    fillOpacity = 0.5;
-  } else {
-    fillOpacity = 1;
-  }
+  // Foco exclusivo: escurece os inativos em vez de clarear, dando mais destaque à fatia ativa
+  const fillOpacity = algumaFatiaAtiva && !estaFatiaAtiva ? 0.2 : 1;
 
   return (
     <Sector
       {...props}
-      fill={COLORS[props.index % COLORS.length]}
+      fill={props.payload.fill} // Usa a cor vinculada ao dado
       fillOpacity={fillOpacity}
-      style={{ transition: 'fill-opacity 0.3s ease' }}
+      style={{ transition: 'all 0.3s ease-out', outline: 'none' }}
     />
   );
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const numero = Number(data.value);
+    return (
+      <div className="bg-white/95 backdrop-blur-xl border border-gray-100 px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] font-sans min-w-[140px]">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.fill }}></span>
+          <p className="text-[13px] font-medium text-gray-500 uppercase tracking-wide">{data.name}</p>
+        </div>
+        <p className="text-xl font-bold text-gray-900 tracking-tight">
+          {numero.toLocaleString('pt-BR')} <span className="text-[14px] text-gray-400 font-medium ml-1">({data.percentual}%)</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
 };
 
 export function GraficoRegioesRanking({
@@ -124,35 +107,52 @@ export function GraficoRegioesRanking({
 
   if (!dadosPorRegiao || dadosPorRegiao.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
-        Sem dados suficientes para agrupar por região.
+      <div className="flex items-center justify-center h-full w-full min-h-[300px] text-gray-400 text-[15px]" role="alert">
+        Sem dados suficientes.
       </div>
     );
   }
 
   return (
-    <PieChart style={{ width: '100%', maxWidth: '500px', maxHeight: '80vh', aspectRatio: 1 }} responsive>
-      <Pie
-        data={dadosPorRegiao}
-        labelLine={false}
-        label={renderCustomizedLabel}
-        fill="#8884d8"
-        dataKey="value"
-        nameKey="name"
-        isAnimationActive={isAnimationActive}
-        shape={FatiaRegiao}
-      />
-      <Tooltip
-        formatter={(value, _name, item: any) => {
-          const numero = Number(value);
-          return [
-            `${numero.toLocaleString('pt-BR')}  (${item?.payload?.percentual}%)`,
-            item?.payload?.name,
-          ];
-        }}
-      />
-      <Legend />
-    </PieChart>
+    <div className="w-full h-full min-h-[350px] flex-1 relative" role="figure" aria-label="Gráfico de distribuição por regiões">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={dadosPorRegiao}
+            dataKey="value"
+            nameKey="name"
+            cx="45%" // Centraliza um pouco mais para unir o gráfico à legenda
+            cy="50%"
+            innerRadius="70%" // Aumentado para deixar o anel mais fino e sofisticado
+            outerRadius="90%"
+            isAnimationActive={isAnimationActive}
+            shape={FatiaRegiao}
+            stroke="#ffffff"
+            strokeWidth={4} // Maior espaçamento em branco entre fatias (Clean)
+            labelLine={false}
+          />
+          <Tooltip 
+            content={<CustomTooltip />} 
+            cursor={{ fill: 'transparent' }} 
+            wrapperStyle={{ outline: 'none' }}
+          />
+          <Legend 
+            layout="vertical" 
+            verticalAlign="middle" 
+            align="right"
+            iconType="circle"
+            iconSize={8} // Bolinhas mais delicadas
+            wrapperStyle={{ 
+              right: '10%', // Puxa a legenda da extremidade direita para mais perto do gráfico
+              fontSize: '14px', 
+              color: '#4B5563', 
+              fontWeight: 500,
+              lineHeight: '2.5' // Maior respiro entre os itens da legenda
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 

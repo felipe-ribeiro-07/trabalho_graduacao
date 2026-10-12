@@ -8,6 +8,7 @@ interface Comparacao {
   percentual: number;
   diferenca: number;
 }
+
 interface Crescimento {
   anoAtual: number | string;
   anoAnterior: number | string;
@@ -15,6 +16,7 @@ interface Crescimento {
   totalAtual: number;
   totalAnterior: number;
 }
+
 interface Props {
   crescimento: Crescimento | null;
   maiorMenor: Comparacao | null;
@@ -26,9 +28,11 @@ interface Props {
 /** memo: só re-renderiza quando os resumos mudam (não a cada clique em pill/select). */
 export const CardsResumo = memo(function CardsResumo({ crescimento, maiorMenor, primeiroSegundo, rotuloPlural }: Props) {
   return (
-    <ul className="grid w-full list-none grid-cols-1 gap-3 p-0 sm:grid-cols-3 md:gap-4 lg:w-1/2" aria-label="Indicadores resumidos">
+    // Transformado em uma coluna flexível que ocupa 100% da largura e altura disponíveis
+    <ul className="flex flex-col h-full w-full list-none gap-4 p-0 m-0" aria-label="Indicadores resumidos">
       {crescimento && (
-        <li>
+        // flex-1: Faz o item (e o card dentro dele) esticar verticalmente, garantindo alturas iguais
+        <li className="flex flex-1 flex-col">
           <GrowthCard
             title="Crescimento anual"
             subtitle={`(${crescimento.anoAtual} x ${crescimento.anoAnterior})`}
@@ -38,7 +42,7 @@ export const CardsResumo = memo(function CardsResumo({ crescimento, maiorMenor, 
         </li>
       )}
       {maiorMenor && (
-        <li>
+        <li className="flex flex-1 flex-col">
           <GrowthCard
             title="Maior x menor"
             subtitle={`(${maiorMenor.labelPrimeiro} x ${maiorMenor.labelSegundo})`}
@@ -48,7 +52,7 @@ export const CardsResumo = memo(function CardsResumo({ crescimento, maiorMenor, 
         </li>
       )}
       {primeiroSegundo && (
-        <li>
+        <li className="flex flex-1 flex-col">
           <GrowthCard
             title="1º x 2º colocado"
             subtitle={`(${primeiroSegundo.labelPrimeiro} x ${primeiroSegundo.labelSegundo})`}

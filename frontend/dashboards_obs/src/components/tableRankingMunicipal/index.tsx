@@ -12,13 +12,10 @@ interface TabelaProps {
 }
 
 export function TableMunicipiosRanking({ uf, dados }: TabelaProps) {
-    // Estado que controla o limite de linhas exibidas na tabela (começa com 20)
-    const [itensVisiveis, setItensVisiveis] = useState(20);
+    const [itensVisiveis, setItensVisiveis] = useState(10);
 
-    // Cria um novo array apenas com a quantidade de itens permitida pelo estado
     const dadosVisiveis = dados.slice(0, itensVisiveis);
 
-    // Função para carregar mais 20 municípios por clique
     const handleCarregarMais = () => {
         setItensVisiveis((prev) => prev + 15);
     };
