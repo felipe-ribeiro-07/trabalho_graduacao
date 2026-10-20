@@ -17,7 +17,7 @@ const PrestadoresEspecializadosSeguimentoTuristico = require("./src/infrastructu
 const PrestadoresDeServicosDeInfra = require("./src/infrastructure/in/adapters/http/routes/PrestadoresDeServicosDeInfra")
 const RestaurantesBaresECafes = require("./src/infrastructure/in/adapters/http/routes/RestaurantesBaresECafes")
 const TransportadoraTuristicas = require("./src/infrastructure/in/adapters/http/routes/TransportadoraTuristica")
-
+const simeiRoutes = require("./src/infrastructure/in/adapters/http/routes/SimeiCnaeRoutes").default
 
 
 //necessario pra utilizar as infos do .env//
@@ -35,6 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //Rotas separadas por seguimentos
+app.use('/simei-cnaes' , simeiRoutes)
 app.use('/acampamento-turistico', AcampamentoTuristicoRoutes);
 app.use('/guias-turisticos', GuiasTuristicosRoutes);
 app.use('/locadora-de-veiculos', LocadoraDeVeiculosRoutes);

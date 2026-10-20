@@ -1,4 +1,5 @@
 {
   "prettier.experimentalTernaries": true,
-  "python.analysis.extraPaths": ["./backend/src/infrastructure/out/database/dados/texto_"]
+  "python.analysis.extraPaths": ["./backend/src/infrastructure/out/database/dados/texto_"],
+  "CodeGPT.apiKey": "Google AI Studio"
 }

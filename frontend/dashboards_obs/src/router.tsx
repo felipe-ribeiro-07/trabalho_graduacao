@@ -14,6 +14,7 @@ import { EmpNauticoPescaTuristicos } from './pages/EmpApoioNauticoPesca/index.ts
 import { MeiosDeHospedagemTuristicos } from './pages/MeiosDeHospedagem/index.tsx';
 import { OrganizadorasEventosTuristicos } from './pages/OrganizadoraDeEventos/index.tsx';
 import { AgenciasDeTursimo } from './pages/AgenciasDeTurismo/index.tsx';
+import {PaginaSimeiCnae} from './pages/Simei/index.tsx'
 
 // Importe o seu componente de Layout (ajuste o caminho conforme sua pasta)
 import { Layout } from './layouts/header.tsx';
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
         path: 'meios-hospedagem',
         element: <MeiosDeHospedagemTuristicos />,
       },
+      {
+        path: 'simei-cnae',
+        element : <PaginaSimeiCnae/>
+      }
     ],
   },
 ]);
